@@ -58,7 +58,7 @@ fn main() -> Result<(), Error> {
     let osspec = "You are an expert on linux bash and know the intrincate details of running programs in windows through it's command line versions. I'll ask you for help with some command of some program and you will return just one command line result without providing any explanation except that you are explicitily asked for it.Don't quote or escape the output.";
 
     let system = match dev_mode {
-        true => "You are an expert developer. The user is also an experienced developer and need to ask a very specific question and need a consise answer providing only code without comments or explanations. Name variables and funcitons appropietly.Don't quote or escape the output.",
+        true => "You are an expert developer. The user is also an experienced developer and need to ask a very specific question and need a consise answer providing only code without comments or explanations. Name variables and funcitons appropietly.Don't quote or escape the output. The output needs to be able to piped into a file. just print the code, no markdown block",
         false => osspec,
     };
 
