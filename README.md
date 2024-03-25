@@ -25,7 +25,7 @@ It is recommended to add chatcmd to the path so it can be invoked easily.
 `echo 'export PATH=$PATH:/path/to/chatcmd' >> ~/.bashrc && source ~/.bashrc`
 
 ### Usage
-As mentioned just do `chatcmd <question for a command>`. Depending on your platform it will provide Bash or PowerShell commands, though you can also specicy what type of command you want:
+As mentioned just do `chatcmd <question for a command>`. Depending on your platform it will provide Bash or PowerShell commands, though you can also specify what type of command you want:
 
 `chatcmd what is the grep command for powershell`  
 `Select-String`
