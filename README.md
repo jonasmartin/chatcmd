@@ -10,7 +10,7 @@ Just run `chatcmd <question for a command>`, and it will print the desired comma
 - `chatcmd list all files in the current directory older than a month but newer than a year`  
 `find . -type f -mtime +30 -mtime -365`
 
-- `chatcmd list all files but pring only the file and date`  
+- `chatcmd list all files but print only the file and date`  
 `ls -l --time-style=+"%Y-%m-%d" | awk '{print $6, $7}'`
 
 
