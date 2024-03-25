@@ -1,4 +1,5 @@
 use std::env;
+
 #[cfg(target_os = "windows")]
 use std::io;
 use std::io::Write;
@@ -7,7 +8,9 @@ use std::process::{Command, Stdio};
 use reqwest::blocking::Client;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::Error;
-use dotenv::dotenv;
+
+#[cfg(dotenv_available)]
+use dotenv_codegen::dotenv;
 
 extern crate json;
 
@@ -18,11 +21,11 @@ fn main() -> Result<(), Error> {
     }
 
     let args = env::args().collect::<Vec<String>>();
-    if args.len() < 2 || (args[1] == "/dev" && args.len() < 3) {
-        println!("Usage: {} [/dev] <question>", args[0]);
+    if args.len() < 2 || (args[1] == "-dev" && args.len() < 3) {
+        println!("Usage: {} [-dev] <question>", args[0]);
         return Ok(());
     }
-    let dev_mode = args[1] == "/dev";
+    let dev_mode = args[1] == "-dev";
     let idquery = if dev_mode { 2 } else { 1 };
 
     let client = Client::new();
@@ -87,15 +90,19 @@ fn main() -> Result<(), Error> {
 }
 
 fn ask_for_key() -> Option<String> {
-    if let Err(e) = dotenv() {
-        eprintln!("Failed to load .env file: {}", e);
-    }
-
     let env_var_name = "OPENAI_API_KEY";
     let api_key = env::var(env_var_name);
 
     if api_key.is_ok() {
         return api_key.ok();
+    } 
+
+    #[cfg(dotenv_available)]
+    {
+        let dot_env_key = dotenv!("OPENAI_API_KEY");
+        if dot_env_key.len() > 0 {
+            return Some(dot_env_key.to_string());
+        }
     }
 
     println!("Environment variable {} not found.", env_var_name);
