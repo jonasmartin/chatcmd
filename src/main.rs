@@ -1,8 +1,7 @@
 use std::env;
 
-#[cfg(target_os = "windows")]
 use std::io;
-use std::io::Write;
+use std::io::{Read, Write};
 use std::process::{Command, Stdio};
 
 use reqwest::blocking::Client;
@@ -12,7 +11,12 @@ use reqwest::Error;
 #[cfg(dotenv_available)]
 use dotenv_codegen::dotenv;
 
+use atty::Stream;
+use serde_json::json;
+
 extern crate json;
+
+const MAX_INPUT_SIZE: usize = 1024;
 
 fn main() -> Result<(), Error> {
     let api_key = ask_for_key();
@@ -25,30 +29,30 @@ fn main() -> Result<(), Error> {
         println!("Usage: {} [-dev] <question>", args[0]);
         return Ok(());
     }
-    let dev_mode = args[1] == "-dev";
+    let mut dev_mode = args[1] == "-dev";
     let idquery = if dev_mode { 2 } else { 1 };
+
+    let mut user_input = env::args().skip(idquery).collect::<Vec<String>>().join(" ");
+
+    if !atty::is(Stream::Stdin) {
+        let mut stdin_input = String::new();
+        io::stdin().read_to_string(&mut stdin_input).unwrap();
+
+        if !stdin_input.is_empty()  {
+            eprintln!("Reading from stdin");
+            dev_mode = true;
+
+            if stdin_input.len() > MAX_INPUT_SIZE {
+                eprintln!("Input is too long. Truncating at {} characters.", MAX_INPUT_SIZE);
+                stdin_input.truncate(MAX_INPUT_SIZE);
+            }
+
+            user_input += &(": ".to_owned() + &stdin_input);
+        }
+    }
 
     let client = Client::new();
     let api_key = api_key.unwrap();
-
-    let prompt = r#"{
-  "model": "gpt-4-turbo-preview",
-  "messages": [
-    {
-      "role": "system",
-      "content": "===SYSTEM==="
-    },
-    {
-      "role": "user",
-      "content": "===USERINPUT==="
-    }
-  ],
-  "temperature": 1,
-  "max_tokens": 256,
-  "top_p": 1,
-  "frequency_penalty": 0,
-  "presence_penalty": 0
-}"#;
 
     #[cfg(target_os = "windows")]
     let osspec = "You are an expert on windows batch and know the intrincate details of running programs in windows through it's command line versions. I'll ask you for help with some command of some program and you will return just one command line result without providing any explanation except that you are explicitily asked for it.Don't quote or escape the output.";
@@ -62,18 +66,31 @@ fn main() -> Result<(), Error> {
         false => osspec,
     };
 
-    let query = prompt
-        .replace(
-            "===USERINPUT===",
-            &env::args().skip(idquery).collect::<Vec<String>>().join(" "),
-        )
-        .replace("===SYSTEM===", system);
+    let max_tokens = if dev_mode { MAX_INPUT_SIZE/2 } else { 256 };
+    let query = json!({
+        "model": "gpt-4-turbo-preview",
+        "messages": [
+            {
+                "role": "system",
+                "content": system,
+            },
+            {
+                "role": "user",
+                "content": user_input,
+            }
+        ],
+        "temperature": 1,
+        "max_tokens": max_tokens,
+        "top_p": 1,
+        "frequency_penalty": 0,
+        "presence_penalty": 0
+    });
 
     let response = client
         .post("https://api.openai.com/v1/chat/completions")
         .bearer_auth(api_key)
         .header(CONTENT_TYPE, "application/json")
-        .body(query)
+        .body(query.to_string())
         .send()?;
 
     // Check the response
