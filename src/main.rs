@@ -7,6 +7,7 @@ use std::process::{Command, Stdio};
 use reqwest::blocking::Client;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::Error;
+use dotenv::dotenv;
 
 extern crate json;
 
@@ -86,6 +87,10 @@ fn main() -> Result<(), Error> {
 }
 
 fn ask_for_key() -> Option<String> {
+    if let Err(e) = dotenv() {
+        eprintln!("Failed to load .env file: {}", e);
+    }
+
     let env_var_name = "OPENAI_API_KEY";
     let api_key = env::var(env_var_name);
 
