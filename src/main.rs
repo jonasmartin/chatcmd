@@ -70,7 +70,7 @@ fn main() -> Result<(), Error> {
 
     let max_tokens = if dev_mode { MAX_INPUT_SIZE / 2 } else { 256 };
     let query = json!({
-        "model": "gpt-4-turbo-preview",
+        "model": "gpt-4o-mini",
         "messages": [
             {
                 "role": "system",
@@ -97,12 +97,18 @@ fn main() -> Result<(), Error> {
 
     // Check the response
     if response.status().is_success() {
-        let parsed = json::parse(&response.text()?).unwrap();
+        let body = response.text()?;
+        let parsed = json::parse(&body).unwrap();
         let result = parsed["choices"][0]["message"]["content"].to_string();
+        if result.is_empty() || result == "null" {
+            eprintln!("Empty response from API. Raw body:\n{}", body);
+        }
         copy_to_clipboard(&result).unwrap();
         println!("{}", result);
     } else {
-        println!("Failed to call API: {}", response.status());
+        let body = response.text().unwrap_or_default();
+        eprintln!("API error body:\n{}", body);
+        println!("Failed to call API: {}", body);
     }
 
     Ok(())
