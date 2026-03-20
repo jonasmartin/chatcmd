@@ -8,7 +8,6 @@ use reqwest::blocking::Client;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::Error;
 
-#[cfg(dotenv_available)]
 use dotenv_codegen::dotenv;
 
 use atty::Stream;
@@ -38,12 +37,15 @@ fn main() -> Result<(), Error> {
         let mut stdin_input = String::new();
         io::stdin().read_to_string(&mut stdin_input).unwrap();
 
-        if !stdin_input.is_empty()  {
+        if !stdin_input.is_empty() {
             eprintln!("Reading from stdin");
             dev_mode = true;
 
             if stdin_input.len() > MAX_INPUT_SIZE {
-                eprintln!("Input is too long. Truncating at {} characters.", MAX_INPUT_SIZE);
+                eprintln!(
+                    "Input is too long. Truncating at {} characters.",
+                    MAX_INPUT_SIZE
+                );
                 stdin_input.truncate(MAX_INPUT_SIZE);
             }
 
@@ -66,7 +68,7 @@ fn main() -> Result<(), Error> {
         false => osspec,
     };
 
-    let max_tokens = if dev_mode { MAX_INPUT_SIZE/2 } else { 256 };
+    let max_tokens = if dev_mode { MAX_INPUT_SIZE / 2 } else { 256 };
     let query = json!({
         "model": "gpt-4-turbo-preview",
         "messages": [
@@ -112,14 +114,11 @@ fn ask_for_key() -> Option<String> {
 
     if api_key.is_ok() {
         return api_key.ok();
-    } 
+    }
 
-    #[cfg(dotenv_available)]
-    {
-        let dot_env_key = dotenv!("OPENAI_API_KEY");
-        if dot_env_key.len() > 0 {
-            return Some(dot_env_key.to_string());
-        }
+    let dot_env_key = dotenv!("OPENAI_API_KEY");
+    if dot_env_key.len() > 0 {
+        return Some(dot_env_key.to_string());
     }
 
     println!("Environment variable {} not found.", env_var_name);
