@@ -8,6 +8,7 @@ use reqwest::blocking::Client;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::Error;
 
+#[cfg(dotenv_available)]
 use dotenv_codegen::dotenv;
 
 use atty::Stream;
@@ -122,9 +123,12 @@ fn ask_for_key() -> Option<String> {
         return api_key.ok();
     }
 
-    let dot_env_key = dotenv!("OPENAI_API_KEY");
-    if dot_env_key.len() > 0 {
-        return Some(dot_env_key.to_string());
+    #[cfg(dotenv_available)]
+    {
+        let dot_env_key = dotenv!("OPENAI_API_KEY");
+        if dot_env_key.len() > 0 {
+            return Some(dot_env_key.to_string());
+        }
     }
 
     println!("Environment variable {} not found.", env_var_name);
